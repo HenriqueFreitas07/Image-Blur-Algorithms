@@ -33,7 +33,6 @@ int main(int argc, char* argv[]) {
     error(2, errno, "Loading %s: %s", argv[1], ImageErrMsg());
   }
   InstrPrint(); // to print instrumentation
-  printf("# LOAD image");
   // Try changing the behaviour of the program by commenting/uncommenting
   // the appropriate lines.
 

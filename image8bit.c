@@ -377,7 +377,7 @@ static inline int G(Image img, int x, int y)
   int index;
   assert(x < img->width && y < img->height);
   // Insert your code here!
-  index = (img->width * img->height - 1) + img->width - 1;
+  index = y - 1 < 0 ? x : ((ImageWidth(img) * (y - 1))) + x;
   assert(0 <= index && index < img->width * img->height);
   return index;
 }
@@ -453,10 +453,12 @@ void ImageBrighten(Image img, double factor)
   assert(img != NULL);
   assert(0 < factor);
   // Insert your code here!
-  int size = img->height * img->width;
+  if (factor == 1.0)
+    return;
+  int size = ImageHeight(img) * ImageWidth(img);
   for (int i = 0; i < size; i++)
   {
-    img->pixel[i] = factor * img->pixel[i] <= img->maxval ? factor * img->pixel[i] : img->maxval;
+    img->pixel[i] = factor * img->pixel[i] <= PixMax ? factor * img->pixel[i] : PixMax;
   }
 }
 
@@ -488,7 +490,7 @@ Image ImageRotate(Image img)
   int height = ImageHeight(img);
   int width = ImageWidth(img);
   int maxval = ImageMaxval(img);
-  Image img2 = ImageCreate(width, height, maxval);
+  Image img2 = ImageCreate(height, width, maxval);
   for (int x = 0; x < width; x++)
   {
     for (int y = 0; y < height; y++)
