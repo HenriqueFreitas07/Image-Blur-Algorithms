@@ -14,6 +14,9 @@ TESTS = test1 test2 test3 test4 test5 test6 test7 test8 test9
 # Default rule: make all programs
 all: $(PROGS)
 
+ImageVal: imageTest.o
+	valgrind ./imageTest
+
 imageTest: imageTest.o image8bit.o instrumentation.o
 
 imageTest.o: image8bit.h instrumentation.h
@@ -30,6 +33,8 @@ pgm:
 
 .PHONY: setup
 setup: test/
+
+
 
 test/:
 	wget -O- https://sweet.ua.pt/jmr/aed/test.tgz | tar xzf -

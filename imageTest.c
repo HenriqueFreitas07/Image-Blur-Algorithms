@@ -28,11 +28,12 @@ int main(int argc, char* argv[]) {
   printf("# LOAD image");
   InstrReset(); // to reset instrumentation
   Image img1 = ImageLoad(argv[1]);
+  ImagePrint(img1);
   if (img1 == NULL) {
     error(2, errno, "Loading %s: %s", argv[1], ImageErrMsg());
   }
   InstrPrint(); // to print instrumentation
-
+  printf("# LOAD image");
   // Try changing the behaviour of the program by commenting/uncommenting
   // the appropriate lines.
 
