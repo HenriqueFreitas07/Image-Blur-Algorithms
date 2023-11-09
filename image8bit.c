@@ -377,7 +377,7 @@ static inline int G(Image img, int x, int y)
   int index;
   assert(x < img->width && y < img->height);
   // Insert your code here!
-  index = y - 1 < 0 ? x : ((ImageWidth(img) * (y - 1))) + x;
+  index = y - 1 < 0 ? x : ((ImageWidth(img) * (y))) + x;
   assert(0 <= index && index < img->width * img->height);
   return index;
 }
@@ -499,7 +499,8 @@ Image ImageRotate(Image img)
       ImageSetPixel(img2, height - y - 1, x, ImageGetPixel(img, x, y));
     }
   }
-
+  if (img2 == NULL)
+    errCause = "There was an unexpected error on the rotation of the image";
   return img2;
 }
 
@@ -523,7 +524,7 @@ Image ImageMirror(Image img)
     for (int y = 0; y < height; y++)
     {
       // making the rotation of the image
-      ImageSetPixel(img2, width - x - 1, y, ImageGetPixel(img, x, y));
+      ImageSetPixel(img2, width - x -1, y, ImageGetPixel(img, x, y));
     }
   }
   return img2;
