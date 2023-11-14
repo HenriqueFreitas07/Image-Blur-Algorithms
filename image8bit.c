@@ -376,8 +376,9 @@ static inline int G(Image img, int x, int y)
 {
   int index;
   assert(x < img->width && y < img->height);
+  assert(x>=0 && y>=0);
   // Insert your code here!
-  index = y - 1 < 0 ? x : ((ImageWidth(img) * (y))) + x;
+  index = ((ImageWidth(img) * y)) + x;
   assert(0 <= index && index < img->width * img->height);
   return index;
 }
@@ -547,11 +548,11 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
   assert(img != NULL);
   assert(ImageValidRect(img, x, y, w, h));
   Image img2 = ImageCreate(w, h, img->maxval);
-  for (int i = x; i < w; i++)
+  for (int i = 0; i < w; i++)
   {
-    for (int j = y; j < h; j++)
+    for (int j = 0; j < h; j++)
     {
-      ImageSetPixel(img2, i, j, ImageGetPixel(img, i, j));
+      ImageSetPixel(img2, i, j, ImageGetPixel(img, i+x, j+y));
     }
   }
   return img2;
@@ -567,10 +568,10 @@ void ImagePaste(Image img1, int x, int y, Image img2)
 { ///
   assert(img1 != NULL);
   assert(img2 != NULL);
-  assert(ImageValidRect(img1, x, y, img2->width, img2->height));
+  int w = ImageWidth(img2);
+  int h = ImageHeight(img2);
+  assert(ImageValidRect(img1, x, y, w,h ));
   // Insert your code here!
-  int w = ImageWidth(img1);
-  int h = ImageHeight(img1);
   for (int i = 0; i < w; i++)
   {
     for (int j = 0; j < h; j++)
@@ -591,14 +592,15 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   assert(img1 != NULL);
   assert(img2 != NULL);
   assert(0 < alpha && alpha <= 1);
-  assert(ImageValidRect(img1, x, y, img2->width, img2->height));
-  int w = ImageWidth(img1);
-  int h = ImageHeight(img1);
+  int w = ImageWidth(img2);
+  int h = ImageHeight(img2);
+  assert(ImageValidRect(img1, x, y, w,h ));
+  // Insert your code here!
   for (int i = 0; i < w; i++)
   {
     for (int j = 0; j < h; j++)
     {
-      ImageSetPixel(img1, i + x, j + j, (uint8)(int)ImageGetPixel(img2, i, j) * alpha);
+      ImageSetPixel(img1, i + x, j + y, ImageGetPixel(img1,i+x,j+y)*(1-alpha)+ImageGetPixel(img2, i, j)*alpha);
     }
   }
 }
