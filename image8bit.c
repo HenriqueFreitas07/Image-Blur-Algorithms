@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "instrumentation.h"
@@ -376,7 +377,7 @@ static inline int G(Image img, int x, int y)
 {
   int index;
   assert(x < img->width && y < img->height);
-  assert(x>=0 && y>=0);
+  assert(x >= 0 && y >= 0);
   // Insert your code here!
   index = ((ImageWidth(img) * y)) + x;
   assert(0 <= index && index < img->width * img->height);
@@ -456,10 +457,16 @@ void ImageBrighten(Image img, double factor)
   // Insert your code here!
   if (factor == 1.0)
     return;
-  int size = ImageHeight(img) * ImageWidth(img);
-  for (int i = 0; i < size; i++)
+  int width = ImageWidth(img);
+  int height = ImageHeight(img);
+  for (int x = 0; x < width; x++)
   {
-    img->pixel[i] = factor * img->pixel[i] <= PixMax ? factor * img->pixel[i] : PixMax;
+    for (int y = 0; y < height; y++)
+    {
+      double f = ImageGetPixel(img, x, y) * factor;
+      double p = f <= ImageMaxval(img) ? f : ImageMaxval(img);
+      ImageSetPixel(img, x, y, p + .5);
+    }
   }
 }
 
@@ -497,7 +504,7 @@ Image ImageRotate(Image img)
     for (int y = 0; y < height; y++)
     {
       // making the rotation of the image
-      ImageSetPixel(img2, height - y - 1, x, ImageGetPixel(img, x, y));
+      ImageSetPixel(img2, y, height - x - 1, ImageGetPixel(img, x, y));
     }
   }
   if (img2 == NULL)
@@ -525,7 +532,7 @@ Image ImageMirror(Image img)
     for (int y = 0; y < height; y++)
     {
       // making the rotation of the image
-      ImageSetPixel(img2, width - x -1, y, ImageGetPixel(img, x, y));
+      ImageSetPixel(img2, width - x - 1, y, ImageGetPixel(img, x, y));
     }
   }
   return img2;
@@ -552,7 +559,7 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
   {
     for (int j = 0; j < h; j++)
     {
-      ImageSetPixel(img2, i, j, ImageGetPixel(img, i+x, j+y));
+      ImageSetPixel(img2, i, j, ImageGetPixel(img, i + x, j + y));
     }
   }
   return img2;
@@ -570,7 +577,7 @@ void ImagePaste(Image img1, int x, int y, Image img2)
   assert(img2 != NULL);
   int w = ImageWidth(img2);
   int h = ImageHeight(img2);
-  assert(ImageValidRect(img1, x, y, w,h ));
+  assert(ImageValidRect(img1, x, y, w, h));
   // Insert your code here!
   for (int i = 0; i < w; i++)
   {
@@ -594,13 +601,14 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   assert(0 < alpha && alpha <= 1);
   int w = ImageWidth(img2);
   int h = ImageHeight(img2);
-  assert(ImageValidRect(img1, x, y, w,h ));
+  assert(ImageValidRect(img1, x, y, w, h));
   // Insert your code here!
   for (int i = 0; i < w; i++)
   {
     for (int j = 0; j < h; j++)
     {
-      ImageSetPixel(img1, i + x, j + y, ImageGetPixel(img1,i+x,j+y)*(1-alpha)+ImageGetPixel(img2, i, j)*alpha);
+      double v = ImageGetPixel(img1, i + x, j + y) * (1 - alpha) + ImageGetPixel(img2, i, j) * alpha;
+      ImageSetPixel(img1, i + x, j + y, v + .5);
     }
   }
 }
@@ -613,7 +621,22 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
   assert(img1 != NULL);
   assert(img2 != NULL);
   assert(ImageValidPos(img1, x, y));
+  assert(ImageValidRect(img1, x, y, ImageWidth(img2), ImageHeight(img2)));
   // Insert your code here!
+  int w = ImageWidth(img2);
+  int h = ImageHeight(img2);
+  // iterate over all pixels in the image
+  for (int i = 0; i < w; i++)
+  {
+    for (int j = 0; j < h; j++)
+    {
+      uint8 pOriginal = ImageGetPixel(img1, x + i, y + j);
+      uint8 pSub = ImageGetPixel(img2, i, j);
+      if (pSub != pOriginal)
+        return 0;
+    }
+  }
+  return 1;
 }
 
 /// Locate a subimage inside another image.
@@ -624,7 +647,41 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 { ///
   assert(img1 != NULL);
   assert(img2 != NULL);
-  // Insert your code here!
+  int w = ImageWidth(img1);
+  int h = ImageHeight(img1);
+  // iterate over all pixels in the image
+  for (int i = 0; i < w; i++)
+  {
+    for (int j = 0; j < h; j++)
+    {
+      if (ImageMatchSubImage(img1, i, j, img2))
+      {
+        return 0;
+      }
+      else
+      {
+        *px = i;
+        *py = j;
+        break;
+      }
+    }
+    if (*px == i)
+      break;
+  }
+  return 1;
+}
+
+// Create a copy of a image
+// every value of the pixels in the images passed to this function
+// is stored and copied into the new one
+static Image ImageCopy(Image img)
+{
+  int height = ImageHeight(img);
+  int width = ImageWidth(img);
+  int maxval = ImageMaxval(img);
+  Image imageCopy = ImageCreate(width, height, maxval);
+  memcpy(imageCopy->pixel, img->pixel, sizeof(uint8) * width * height);
+  return imageCopy;
 }
 
 /// Filtering
@@ -634,6 +691,37 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
 void ImageBlur(Image img, int dx, int dy)
-{ ///
-  // Insert your code here!
+{
+  int width = ImageWidth(img);
+  int height = ImageHeight(img);
+  Image copy = ImageCopy(img);
+  long int sum = 0;
+  // uint8 *pixel = img->pixel;
+  // long int p[size];
+  // for (int i = 0; i < size; i++)
+  // {
+  //   sum += pixel[i];
+  //   p[i] = sum;
+  // }
+  int count = 0;
+  for (int x = 0; x < width; x++)
+  {
+    for (int y = 0; y < height; y++)
+    {
+      sum = 0;
+      count = 0;
+      for (int kx = x - dx; kx < x + dx + 1; kx++)
+      {
+        for (int ky = y - dy; ky < y + dy + 1; ky++)
+        {
+          if (ImageValidPos(copy, kx, ky))
+          {
+            sum += ImageGetPixel(copy, kx, ky);
+            count++;
+          }
+        }
+      }
+      ImageSetPixel(img, x, y, (uint8)(((double)sum / count) + .5));
+    }
+  }
 }
