@@ -9,7 +9,7 @@ CFLAGS = -Wall -O2 -g
 
 PROGS = imageTool imageTest
 
-TESTS = test1 test2 test3 test4 test5 test6 test7 test8 test9
+TESTS = test1 test2 test3 test4 test5 test6 test7 test8 test9 test10
 
 # Default rule: make all programs
 all: $(PROGS)
@@ -78,6 +78,13 @@ test9: $(PROGS) setup
 	./imageTool test/original.pgm blur 7,7 save blur.pgm
 	cmp blur.pgm test/blur.pgm
 
+test10: $(PROGS) setup
+	./imageTool test/original.pgm blur 7,7 save blur.pgm
+	./imageTool  test/crop3.pgm test/original.pgm locate
+	./imageTool  test/crop.pgm test/original.pgm locate
+	./imageTool  test/crop1.pgm test/original.pgm locate
+	./imageTool  test/crop2.pgm test/original.pgm locate
+	./imageTool  test/crop4.pgm test/original.pgm locate
 .PHONY: tests
 tests: $(TESTS)
 

@@ -359,6 +359,7 @@ int main(int ac, char *av[])
       {
         printf("# NOTFOUND\n");
       }
+      InstrPrint();
     }
     else if (strcmp(av[k], "blur") == 0)
     {

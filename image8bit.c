@@ -147,11 +147,15 @@ void ImageInit(void)
 { ///
   InstrCalibrate();
   InstrName[0] = "pixmem"; // InstrCount[0] will count pixel array acesses
+  InstrName[1] = "locatesub";
+  InstrName[2] = "blurCounter";
   // Name other counters here...
 }
 
 // Macros to simplify accessing instrumentation counters:
 #define PIXMEM InstrCount[0]
+#define LOCATESUB InstrCount[1]
+#define BLURCOUNTER InstrCount[2]
 // Add more macros here...
 
 // TIP: Search for PIXMEM or InstrCount to see where it is incremented!
@@ -630,8 +634,10 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
   {
     for (int j = 0; j < h; j++)
     {
+
       uint8 pOriginal = ImageGetPixel(img1, x + i, y + j);
       uint8 pSub = ImageGetPixel(img2, i, j);
+      LOCATESUB += 1;
       if (pSub != pOriginal)
         return 0;
     }
@@ -649,40 +655,38 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
   assert(img2 != NULL);
   int w = ImageWidth(img1);
   int h = ImageHeight(img1);
+  int w1 = ImageWidth(img2);
+  int h1 = ImageHeight(img2);
   // iterate over all pixels in the image
-  for (int i = 0; i < w; i++)
+  for (int i = 0; i < w - w1; i++)
   {
-    for (int j = 0; j < h; j++)
+    for (int j = 0; j < h - h1; j++)
     {
       if (ImageMatchSubImage(img1, i, j, img2))
       {
-        return 0;
-      }
-      else
-      {
         *px = i;
         *py = j;
-        break;
+        printf("Counter(found): %ld\n", LOCATESUB);
+        return 1; // Return 1 when a match is found
       }
     }
-    if (*px == i)
-      break;
   }
-  return 1;
+  printf("Counter(Not Found): %ld\n", LOCATESUB);
+  return 0; // Return 0 when no match is found
 }
 
 // Create a copy of a image
 // every value of the pixels in the images passed to this function
 // is stored and copied into the new one
-static Image ImageCopy(Image img)
-{
-  int height = ImageHeight(img);
-  int width = ImageWidth(img);
-  int maxval = ImageMaxval(img);
-  Image imageCopy = ImageCreate(width, height, maxval);
-  memcpy(imageCopy->pixel, img->pixel, sizeof(uint8) * width * height);
-  return imageCopy;
-}
+// static Image ImageCopy(Image img)
+// {
+//   int height = ImageHeight(img);
+//   int width = ImageWidth(img);
+//   int maxval = ImageMaxval(img);
+//   Image imageCopy = ImageCreate(width, height, maxval);
+//   memcpy(imageCopy->pixel, img->pixel, sizeof(uint8) * width * height);
+//   return imageCopy;
+// }
 
 /// Filtering
 
@@ -690,38 +694,72 @@ static Image ImageCopy(Image img)
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
+//Optimized version
 void ImageBlur(Image img, int dx, int dy)
 {
   int width = ImageWidth(img);
   int height = ImageHeight(img);
-  Image copy = ImageCopy(img);
-  long int sum = 0;
-  // uint8 *pixel = img->pixel;
-  // long int p[size];
-  // for (int i = 0; i < size; i++)
-  // {
-  //   sum += pixel[i];
-  //   p[i] = sum;
-  // }
-  int count = 0;
+  long long int sum[width * height];
+  double average = 0;
+
+  // cumulative sum of the values until that index
+  for (int i = 0; i < width * height; i++)
+  {
+    int xx = i % width;
+    int yy = i / width;
+    int top = yy - 1;
+    int left = xx - 1;
+    sum[i] = (ImageValidPos(img, left, yy) ? sum[G(img, left, yy)] : 0) +
+             (ImageValidPos(img, xx, top) ? sum[G(img, xx, top)] : 0) -
+             (ImageValidPos(img, left, top) ? sum[G(img, left, top)] : 0) +
+             ImageGetPixel(img, xx, yy);
+  }
+
   for (int x = 0; x < width; x++)
   {
     for (int y = 0; y < height; y++)
     {
-      sum = 0;
-      count = 0;
-      for (int kx = x - dx; kx < x + dx + 1; kx++)
-      {
-        for (int ky = y - dy; ky < y + dy + 1; ky++)
-        {
-          if (ImageValidPos(copy, kx, ky))
-          {
-            sum += ImageGetPixel(copy, kx, ky);
-            count++;
-          }
-        }
-      }
-      ImageSetPixel(img, x, y, (uint8)(((double)sum / count) + .5));
+      int x1 = x - dx - 1 < 0 ? 1: x - dx;
+      int x2 = x + dx > width -1 ? width - 1 : x + dx;
+      int y1 = y - dy - 1 < 0 ? 1 : y - dy;
+      int y2 = y + dy > height -1 ? height - 1 : y + dy;
+      int count = (x2 - x1 + 1) * (y2 - y1 + 1);
+      average = (sum[G(img, x2, y2)] -
+                 sum[G(img, x1 - 1, y2)] -
+                 sum[G(img, x2, y1 - 1)] +
+                 sum[G(img, x1-1, y1-1 )]);
+       ImageSetPixel(img, x, y, (uint8)(average/count + 0.5));
     }
   }
 }
+
+//1ª versão
+// void ImageBlur(Image img, int dx, int dy)
+// {
+//   int width = ImageWidth(img);
+//   int height = ImageHeight(img);
+//   Image copy = ImageCopy(img);
+//   long int sum = 0;
+//   int count = 0;
+//   for (int x = 0; x < width; x++)
+//   {
+//     for (int y = 0; y < height; y++)
+//     {
+//       sum = 0;
+//       count = 0;
+//       for (int kx = x - dx; kx < x + dx + 1; kx++)
+//       {
+//         for (int ky = y - dy; ky < y + dy + 1; ky++)
+//         {
+//           if (ImageValidPos(copy, kx, ky))
+//           {
+//             BLURCOUNTER+=1;
+//             sum += ImageGetPixel(copy, kx, ky);
+//             count++;
+//           }
+//         }
+//       }
+//       ImageSetPixel(img, x, y, (uint8)(((double)sum / count) + .5));
+//     }
+//   }
+// }
