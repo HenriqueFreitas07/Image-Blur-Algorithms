@@ -63,7 +63,7 @@ test5: $(PROGS) setup
 	cmp mirror.pgm test/mirror.pgm
 
 test6: $(PROGS) setup
-	./imageTool test/original.pgm crop 100,100,100,100 save crop.pgm
+	./imageTool test/original.pgm crop 99,99,100,100 save crop.pgm
 	cmp crop.pgm test/crop.pgm
 
 test7: $(PROGS) setup
@@ -78,13 +78,21 @@ test9: $(PROGS) setup
 	./imageTool test/original.pgm blur 7,7 save blur.pgm
 	cmp blur.pgm test/blur.pgm
 
-test10: $(PROGS) setup
-	./imageTool test/original.pgm blur 7,7 save blur.pgm
+testLocate.: $(PROGS) setup
 	./imageTool  test/crop3.pgm test/original.pgm locate
-	./imageTool  test/crop.pgm test/original.pgm locate
-	./imageTool  test/crop1.pgm test/original.pgm locate
 	./imageTool  test/crop2.pgm test/original.pgm locate
 	./imageTool  test/crop4.pgm test/original.pgm locate
+	./imageTool  test/crop5.pgm test/original.pgm locate
+	./imageTool  test/crop6.pgm test/original.pgm locate
+	./imageTool  test/crop7.pgm test/original.pgm locate
+	./imageTool  test/crop1.pgm test/original.pgm locate
+testBlur: $(PROGS) setup
+	./imageTool test/original.pgm blur 0,0 save blur.pgm
+	./imageTool test/original.pgm blur 1,1 save blur.pgm
+	./imageTool test/original.pgm blur 7,7 save blur.pgm
+	./imageTool test/original.pgm blur 50,50 save blur.pgm
+	./imageTool test/original.pgm blur 150,150 save blur.pgm
+
 .PHONY: tests
 tests: $(TESTS)
 

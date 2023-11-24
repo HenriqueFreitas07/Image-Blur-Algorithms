@@ -382,6 +382,7 @@ int main(int ac, char *av[])
       }
       fprintf(stderr, "Blur I%d with %dx%d mean filter\n", n - 1, 2 * dx + 1, 2 * dy + 1);
       ImageBlur(img[n - 1], dx, dy);
+      InstrPrint();
     }
     else if (strcmp(av[k], "save") == 0)
     {
