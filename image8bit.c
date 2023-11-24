@@ -678,6 +678,7 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 // Create a copy of a image
 // every value of the pixels in the images passed to this function
 // is stored and copied into the new one
+//comentar quando imageBlur more efficiently is in test mode
 // static Image ImageCopy(Image img)
 // {
 //   int height = ImageHeight(img);

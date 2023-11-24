@@ -63,7 +63,7 @@ test5: $(PROGS) setup
 	cmp mirror.pgm test/mirror.pgm
 
 test6: $(PROGS) setup
-	./imageTool test/original.pgm crop 99,99,100,100 save crop.pgm
+	./imageTool test/original.pgm crop 100,100,100,100 save crop.pgm
 	cmp crop.pgm test/crop.pgm
 
 test7: $(PROGS) setup
