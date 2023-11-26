@@ -10,11 +10,11 @@
 /// 2013, 2023
 
 // Student authors (fill in below):
-// NMec:  Name:
+// NMec:114646  Name: Francisco Albergaria
+// NMec:114990  Name: Henrique Freitas
 //
 //
-//
-// Date:
+// Date:26-11-2023
 //
 
 #include "image8bit.h"
